@@ -16,7 +16,7 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="64dp"
                 android:layout_marginStart="8dp"
                 android:layout_marginTop="16dp"
                 android:layout_marginEnd="8dp"
@@ -25,22 +25,17 @@
 
                 <ImageView
                     android:id="@+id/small_image"
+                    android:adjustViewBounds="true"
                     android:layout_width="wrap_content"
-                    android:layout_height="64dp" />
+                    android:layout_height="match_parent" />
 
                 <TextView
-                    android:id="@+id/breed_number"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
+                    android:gravity="center_vertical"
+                    android:layout_marginStart="8dp"
                     android:layout_marginEnd="8dp"
-                    android:textColor="@color/cardview_shadow_start_color"
-                    tools:text="1" />
-
-                <TextView
                     android:id="@+id/breed_name"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:textSize="19sp"
                     tools:text="Abyssinian" />
             </LinearLayout>

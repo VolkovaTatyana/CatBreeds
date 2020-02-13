@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName;
 
 import java.io.Serializable;
 
-public class Breed implements Serializable {
+public class Breed implements Serializable, Comparable<Breed> {
 
     @SerializedName("adaptability")
     private int adaptability;
@@ -430,5 +430,10 @@ public class Breed implements Serializable {
 
     public void setCatFriendly(int catFriendly) {
         this.catFriendly = catFriendly;
+    }
+
+    @Override
+    public int compareTo(Breed o) {
+        return name.compareTo(o.name);
     }
 }
