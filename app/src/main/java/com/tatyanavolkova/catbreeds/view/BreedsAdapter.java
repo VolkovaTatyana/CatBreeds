@@ -43,12 +43,8 @@ public class BreedsAdapter extends RecyclerView.Adapter<BreedsAdapter.BreedViewH
 
     @Override
     public void onBindViewHolder(@NonNull BreedViewHolder holder, int position) {
-        Log.e(TAG, "breed_id " + breedList.get(position).getId());
         holder.binding.breedName.setText(breedList.get(position).getName());
         downloadImageWithRequestListener(holder, breedList.get(position).getImageUrl());
-/*        if (breedList.get(position).getImageUrl() != null) {
-            downloadImageWithRequestListener(holder, breedList.get(position).getImageUrl());
-        }*/
     }
 
     @Override
@@ -73,7 +69,6 @@ public class BreedsAdapter extends RecyclerView.Adapter<BreedsAdapter.BreedViewH
 
                     @Override
                     public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
-                        Log.e(TAG, "Glide, onResourceReady");
                         return false;
                     }
                 })

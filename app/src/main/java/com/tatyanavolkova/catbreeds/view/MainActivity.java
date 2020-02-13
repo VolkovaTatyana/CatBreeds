@@ -10,8 +10,10 @@ import androidx.recyclerview.widget.GridLayoutManager;
 
 import android.app.FragmentManager;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
@@ -51,6 +53,14 @@ public class MainActivity extends AppCompatActivity {
     private BreedViewModel viewModel;
     private RetainedFragment retainedFragment; //for saving data when rotate
 
+    private int getColumnCount() {
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        int width = (int) (displayMetrics.widthPixels / displayMetrics.density);
+        Log.e(TAG, "displayMetrics, width " + width);
+        return width/300;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -67,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
             adapter.setBreedList(retainedFragment.getData());
         }
 
-        binding.breedsList.setLayoutManager(new GridLayoutManager(this, 1)); //portrait orientation
+        binding.breedsList.setLayoutManager(new GridLayoutManager(this, getColumnCount()));
         binding.breedsList.setAdapter(adapter);
 
         viewModel = new ViewModelProvider(this).get(BreedViewModel.class);

@@ -59,7 +59,6 @@ public class BreedViewModel extends AndroidViewModel {
                             @Override
                             public void accept(List<ImageObject> imageObjects) throws Exception {
                                 if (imageObjects != null) {
-                                    Log.e(TAG, "loadImageObject, success " + imageObjects.get(0).toString());
                                     breed.setImageUrl(imageObjects.get(0).getUrl());
                                     singleBreedLiveData.setValue(breed);
                                 }

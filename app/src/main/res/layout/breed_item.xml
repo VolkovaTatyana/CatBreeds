@@ -26,6 +26,7 @@
                 <ImageView
                     android:id="@+id/small_image"
                     android:adjustViewBounds="true"
+                    android:minWidth="50dp"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent" />
 
