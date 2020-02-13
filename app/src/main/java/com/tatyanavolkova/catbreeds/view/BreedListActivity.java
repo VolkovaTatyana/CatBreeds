@@ -5,13 +5,17 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.databinding.DataBindingUtil;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 
 import android.app.FragmentManager;
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.drawable.Drawable;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -44,9 +48,9 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 
-public class MainActivity extends AppCompatActivity {
+public class BreedListActivity extends AppCompatActivity {
 
-    private final String TAG = "MainActivity";
+    private final String TAG = this.getClass().getSimpleName();
     private BreedsAdapter adapter;
     private List<Breed> breedList;
     private ActivityMainBinding binding;
@@ -57,8 +61,17 @@ public class MainActivity extends AppCompatActivity {
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         int width = (int) (displayMetrics.widthPixels / displayMetrics.density);
-        Log.e(TAG, "displayMetrics, width " + width);
-        return width/300;
+        return width / 300;
+    }
+
+    public static boolean isOnline(Context context) {
+        ConnectivityManager cm =
+                (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        if (netInfo != null && netInfo.isConnectedOrConnecting()) {
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -69,39 +82,35 @@ public class MainActivity extends AppCompatActivity {
         breedList = new ArrayList<>();
         adapter = new BreedsAdapter();
 
-        FragmentManager fm = getFragmentManager();
-        retainedFragment = (RetainedFragment) fm.findFragmentByTag("data");
-
-        if (retainedFragment != null && retainedFragment.getData() != null) {
-            setBreedList(retainedFragment.getData());
-            adapter.setBreedList(retainedFragment.getData());
-        }
-
         binding.breedsList.setLayoutManager(new GridLayoutManager(this, getColumnCount()));
         binding.breedsList.setAdapter(adapter);
 
         viewModel = new ViewModelProvider(this).get(BreedViewModel.class);
-        viewModel.getSingleBreedLiveData().observe(this, new Observer<Breed>() {
-            @Override
-            public void onChanged(Breed breed) {
-                breedList.add(breed);
-                Collections.sort(breedList);
-                adapter.setBreedList(breedList);
-                retainedFragment.setData(breedList);
-            }
-        });
 
-        // create the fragment and data the first time
-        if (retainedFragment == null || retainedFragment.getData() == null) {
+        FragmentManager fm = getFragmentManager();
+        retainedFragment = (RetainedFragment) fm.findFragmentByTag("data");
+        if (retainedFragment != null && retainedFragment.getData() != null) {
+            setBreedList(retainedFragment.getData());
+            adapter.setBreedList(retainedFragment.getData());
+            BreedViewModel.setIsLoaded(true); //to prevent new loading data when it is loaded
+        } else { // create the fragment and data the first time
             // add the fragment
             retainedFragment = new RetainedFragment();
             fm.beginTransaction().add(retainedFragment, "data").commit();
             // load the data from the web
             viewModel.loadData();
-        } else {
-            setBreedList(retainedFragment.getData());
-            adapter.setBreedList(retainedFragment.getData());
         }
+
+        viewModel.getBreedListLiveData().observe(this, new Observer<List<Breed>>() {
+            @Override
+            public void onChanged(List<Breed> breeds) {
+                Collections.sort(breeds);
+                setBreedList(breeds);
+                adapter.setBreedList(breedList);
+                retainedFragment.setData(breedList);
+                BreedViewModel.setIsLoaded(true); //to prevent new loading data when it is loaded
+            }
+        });
 
         adapter.setOnBreedClickListener(new BreedsAdapter.OnBreedClickListener() {
             @Override

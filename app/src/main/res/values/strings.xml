@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">CatBreeds</string>
+    <string name="error_load_data">An error has occurred while loading data. Please check up an internet connection.</string>
 </resources>

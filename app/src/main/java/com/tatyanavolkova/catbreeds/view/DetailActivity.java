@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.DataSource;
@@ -39,7 +40,7 @@ import io.reactivex.schedulers.Schedulers;
 
 public class DetailActivity extends AppCompatActivity {
 
-    private final String TAG = "DetailActivity";
+    private final String TAG = this.getClass().getSimpleName();
     private Breed catBreed;
     private ActivityDetailBinding binding;
 
@@ -115,6 +116,7 @@ public class DetailActivity extends AppCompatActivity {
                     @Override
                     public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
                         Log.e(TAG, "ERROR "+ e.getMessage());
+                        Toast.makeText(getApplicationContext(), getString(R.string.error_load_data), Toast.LENGTH_SHORT).show();
                         return false;
                     }
 
