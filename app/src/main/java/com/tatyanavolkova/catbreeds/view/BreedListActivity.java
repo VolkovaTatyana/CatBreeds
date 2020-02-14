@@ -15,6 +15,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.widget.Toast;
 import com.tatyanavolkova.catbreeds.R;
 import com.tatyanavolkova.catbreeds.data.RetainedFragment;
@@ -35,6 +36,7 @@ public class BreedListActivity extends AppCompatActivity implements NetworkState
     private static int page = 0;
     private static boolean isLoading = false;
     private static boolean resumeDownload = false;
+    private static int tryCount = 0;
 
     private FragmentManager fm;
 
@@ -64,11 +66,11 @@ public class BreedListActivity extends AppCompatActivity implements NetworkState
         fm = getFragmentManager();
         retainedFragment = (RetainedFragment) fm.findFragmentByTag("data");
 
-        getData();
-
         networkStateReceiver = new NetworkStateReceiver();
         networkStateReceiver.addListener(this);
         this.registerReceiver(networkStateReceiver, new IntentFilter(android.net.ConnectivityManager.CONNECTIVITY_ACTION));
+
+        getData();
 
         viewModel.setOnStartLoadingListener(new BreedViewModel.OnStartLoadingListener() {
             @Override
@@ -83,6 +85,10 @@ public class BreedListActivity extends AppCompatActivity implements NetworkState
                 isLoading = false;
                 resumeDownload = true;
                 retainedFragment.setResumeDownload(true);
+                if(networkStateReceiver.connected && tryCount < 2) {
+                    viewModel.loadData(page); //если данные не загружены и и-нет подключен - попытка снова загрузить данные.
+                    tryCount++;
+                }
             }
         });
 
@@ -147,9 +153,6 @@ public class BreedListActivity extends AppCompatActivity implements NetworkState
 
     @Override
     public void networkUnavailable() {
-        retainedFragment.setData(breedList);
-        retainedFragment.setPage(page);
-        retainedFragment.setResumeDownload(resumeDownload);
         Toast.makeText(this, getString(R.string.network_error), Toast.LENGTH_SHORT).show();
     }
 
