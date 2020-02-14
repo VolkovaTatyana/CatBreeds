@@ -60,9 +60,15 @@ public class BreedListActivity extends AppCompatActivity implements NetworkState
     private RetainedFragment retainedFragment; //for saving data when rotate
     private static int page = 0;
     private static boolean isLoading = false;
+    private static boolean resumeDownload = false;
+
     private FragmentManager fm;
 
     private NetworkStateReceiver networkStateReceiver;
+
+    public static void setResumeDownload(boolean resumeDownload) {
+        BreedListActivity.resumeDownload = resumeDownload;
+    }
 
     private int getColumnCount() {
         DisplayMetrics displayMetrics = new DisplayMetrics();
@@ -88,6 +94,7 @@ public class BreedListActivity extends AppCompatActivity implements NetworkState
             setBreedList(retainedFragment.getData());
             setPage(retainedFragment.getPage());
             adapter.setBreedList(breedList);
+            setResumeDownload(retainedFragment.isResumeDownload());
         }
 
         networkStateReceiver = new NetworkStateReceiver();
@@ -98,37 +105,38 @@ public class BreedListActivity extends AppCompatActivity implements NetworkState
             @Override
             public void onStartLoading() {
                 isLoading = true;
+                resumeDownload = false;
+                retainedFragment.setResumeDownload(false);
             }
-        });
 
-        viewModel.getBreedListLiveData().observe(this, new Observer<List<Breed>>() {
             @Override
-            public void onChanged(List<Breed> breeds) {
-                if (breedList == null) {
-                    setBreedList(breeds);
-                    isLoading = false;
-                    page++;
-                } else if (!breedList.containsAll(breeds)) {
-                    breedList.addAll(breeds);
-                    isLoading = false;
-                    page++;
-                }
-                adapter.setBreedList(breedList);
-                retainedFragment.setData(breedList);
-                retainedFragment.setPage(page);
+            public void onLoadingFailed() {
+                isLoading = false;
+                resumeDownload = true;
+                retainedFragment.setResumeDownload(true);
             }
         });
 
-        adapter.setOnBreedClickListener(new BreedsAdapter.OnBreedClickListener() {
-            @Override
-            public void onBreedClick(int position) {
-                Intent detailIntent = new Intent(getApplicationContext(), DetailActivity.class);
-                detailIntent.putExtra("breed", breedList.get(position));
-                startActivity(detailIntent);
+        viewModel.getBreedListLiveData().observe(this, breeds -> {
+            if (breedList == null) {
+                setBreedList(breeds);
+                isLoading = false;
+                page++;
+            } else if (!breedList.containsAll(breeds)) {
+                breedList.addAll(breeds);
+                isLoading = false;
+                page++;
             }
+            adapter.setBreedList(breedList);
+            retainedFragment.setData(breedList);
+            retainedFragment.setPage(page);
         });
 
-
+        adapter.setOnBreedClickListener(position -> {
+            Intent detailIntent = new Intent(getApplicationContext(), DetailActivity.class);
+            detailIntent.putExtra("breed", breedList.get(position));
+            startActivity(detailIntent);
+        });
     }
 
     private void getData() {
@@ -140,15 +148,14 @@ public class BreedListActivity extends AppCompatActivity implements NetworkState
             // load the data from the web
             viewModel.loadData(page);
         }
-        adapter.setOnReachEndListener(new BreedsAdapter.OnReachEndListener() {
-            @Override
-            public void onReachEnd() {
-                if (!isLoading) {
-                    Log.e(TAG, "onReachEnd");
-                    viewModel.loadData(page);
-                }
+        adapter.setOnReachEndListener(() -> {
+            if (!isLoading) {
+                viewModel.loadData(page);
             }
         });
+        if (resumeDownload) {
+            viewModel.loadData(page);
+        }
     }
 
     public static void setPage(int page) {
@@ -161,13 +168,11 @@ public class BreedListActivity extends AppCompatActivity implements NetworkState
 
     @Override
     public void networkAvailable() {
-        Log.e(TAG, "networkAvailable");
         getData();
     }
 
     @Override
     public void networkUnavailable() {
-        Log.e(TAG, "networkUnavailable");
         Toast.makeText(this, getString(R.string.network_error), Toast.LENGTH_SHORT).show();
     }
 
@@ -177,6 +182,7 @@ public class BreedListActivity extends AppCompatActivity implements NetworkState
         // store the data in the fragment
         retainedFragment.setData(breedList);
         retainedFragment.setPage(page);
+        retainedFragment.setResumeDownload(resumeDownload);
 
         networkStateReceiver.removeListener(this);
         this.unregisterReceiver(networkStateReceiver);
