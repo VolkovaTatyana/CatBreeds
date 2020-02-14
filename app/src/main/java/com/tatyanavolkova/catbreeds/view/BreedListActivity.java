@@ -13,42 +13,16 @@ import android.app.FragmentManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.res.Configuration;
-import android.graphics.drawable.Drawable;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
-import android.util.Log;
-import android.view.View;
-import android.widget.ImageView;
 import android.widget.Toast;
-
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.DataSource;
-import com.bumptech.glide.load.engine.GlideException;
-import com.bumptech.glide.request.RequestListener;
-import com.bumptech.glide.request.RequestOptions;
-import com.bumptech.glide.request.target.Target;
 import com.tatyanavolkova.catbreeds.R;
 import com.tatyanavolkova.catbreeds.data.RetainedFragment;
 import com.tatyanavolkova.catbreeds.databinding.ActivityMainBinding;
-import com.tatyanavolkova.catbreeds.network.ApiFactory;
-import com.tatyanavolkova.catbreeds.network.ApiService;
 import com.tatyanavolkova.catbreeds.network.NetworkStateReceiver;
 import com.tatyanavolkova.catbreeds.pojo.Breed;
-import com.tatyanavolkova.catbreeds.pojo.ImageObject;
-
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Consumer;
-import io.reactivex.schedulers.Schedulers;
 
 public class BreedListActivity extends AppCompatActivity implements NetworkStateReceiver.NetworkStateReceiverListener {
 
@@ -90,12 +64,7 @@ public class BreedListActivity extends AppCompatActivity implements NetworkState
         fm = getFragmentManager();
         retainedFragment = (RetainedFragment) fm.findFragmentByTag("data");
 
-        if (retainedFragment != null && retainedFragment.getData() != null) {
-            setBreedList(retainedFragment.getData());
-            setPage(retainedFragment.getPage());
-            adapter.setBreedList(breedList);
-            setResumeDownload(retainedFragment.isResumeDownload());
-        }
+        getData();
 
         networkStateReceiver = new NetworkStateReceiver();
         networkStateReceiver.addListener(this);
@@ -147,6 +116,11 @@ public class BreedListActivity extends AppCompatActivity implements NetworkState
             fm.beginTransaction().add(retainedFragment, "data").commit();
             // load the data from the web
             viewModel.loadData(page);
+        } else {
+            setBreedList(retainedFragment.getData());
+            setPage(retainedFragment.getPage());
+            adapter.setBreedList(breedList);
+            setResumeDownload(retainedFragment.isResumeDownload());
         }
         adapter.setOnReachEndListener(() -> {
             if (!isLoading) {
@@ -173,6 +147,9 @@ public class BreedListActivity extends AppCompatActivity implements NetworkState
 
     @Override
     public void networkUnavailable() {
+        retainedFragment.setData(breedList);
+        retainedFragment.setPage(page);
+        retainedFragment.setResumeDownload(resumeDownload);
         Toast.makeText(this, getString(R.string.network_error), Toast.LENGTH_SHORT).show();
     }
 
