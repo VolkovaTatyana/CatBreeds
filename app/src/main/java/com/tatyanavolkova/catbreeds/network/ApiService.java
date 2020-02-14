@@ -14,14 +14,11 @@ import retrofit2.http.Url;
 
 public interface ApiService {
 
-    @GET("breeds")
-    Observable<List<Breed>> getBreeds(@HeaderMap Map<String, String> headers);
+    @GET
+    Observable<List<Breed>> getBreeds(@HeaderMap Map<String, String> headers,
+                                      @Url String url);
 
     @GET
     Observable<List<ImageObject>> getImageObjects(@HeaderMap Map<String, String> headers,
                                                   @Url String url);
-
-/*    @GET("images/search?breed_id={breed_id}")
-    Observable<List<ImageObject>> getImageObjects(@HeaderMap Map<String, String> headers,
-                                                  @Path(value = "breed_id", encoded = true) String id);*/
 }

@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import android.app.FragmentManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.Configuration;
 import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
@@ -34,6 +35,7 @@ import com.tatyanavolkova.catbreeds.data.RetainedFragment;
 import com.tatyanavolkova.catbreeds.databinding.ActivityMainBinding;
 import com.tatyanavolkova.catbreeds.network.ApiFactory;
 import com.tatyanavolkova.catbreeds.network.ApiService;
+import com.tatyanavolkova.catbreeds.network.NetworkStateReceiver;
 import com.tatyanavolkova.catbreeds.pojo.Breed;
 import com.tatyanavolkova.catbreeds.pojo.ImageObject;
 
@@ -48,7 +50,7 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 
-public class BreedListActivity extends AppCompatActivity {
+public class BreedListActivity extends AppCompatActivity implements NetworkStateReceiver.NetworkStateReceiverListener {
 
     private final String TAG = this.getClass().getSimpleName();
     private BreedsAdapter adapter;
@@ -56,22 +58,17 @@ public class BreedListActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
     private BreedViewModel viewModel;
     private RetainedFragment retainedFragment; //for saving data when rotate
+    private static int page = 0;
+    private static boolean isLoading = false;
+    private FragmentManager fm;
+
+    private NetworkStateReceiver networkStateReceiver;
 
     private int getColumnCount() {
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         int width = (int) (displayMetrics.widthPixels / displayMetrics.density);
         return width / 300;
-    }
-
-    public static boolean isOnline(Context context) {
-        ConnectivityManager cm =
-                (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo netInfo = cm.getActiveNetworkInfo();
-        if (netInfo != null && netInfo.isConnectedOrConnecting()) {
-            return true;
-        }
-        return false;
     }
 
     @Override
@@ -81,34 +78,44 @@ public class BreedListActivity extends AppCompatActivity {
 
         breedList = new ArrayList<>();
         adapter = new BreedsAdapter();
-
         binding.breedsList.setLayoutManager(new GridLayoutManager(this, getColumnCount()));
         binding.breedsList.setAdapter(adapter);
-
         viewModel = new ViewModelProvider(this).get(BreedViewModel.class);
-
-        FragmentManager fm = getFragmentManager();
+        fm = getFragmentManager();
         retainedFragment = (RetainedFragment) fm.findFragmentByTag("data");
+
         if (retainedFragment != null && retainedFragment.getData() != null) {
             setBreedList(retainedFragment.getData());
-            adapter.setBreedList(retainedFragment.getData());
-            BreedViewModel.setIsLoaded(true); //to prevent new loading data when it is loaded
-        } else { // create the fragment and data the first time
-            // add the fragment
-            retainedFragment = new RetainedFragment();
-            fm.beginTransaction().add(retainedFragment, "data").commit();
-            // load the data from the web
-            viewModel.loadData();
+            setPage(retainedFragment.getPage());
+            adapter.setBreedList(breedList);
         }
+
+        networkStateReceiver = new NetworkStateReceiver();
+        networkStateReceiver.addListener(this);
+        this.registerReceiver(networkStateReceiver, new IntentFilter(android.net.ConnectivityManager.CONNECTIVITY_ACTION));
+
+        viewModel.setOnStartLoadingListener(new BreedViewModel.OnStartLoadingListener() {
+            @Override
+            public void onStartLoading() {
+                isLoading = true;
+            }
+        });
 
         viewModel.getBreedListLiveData().observe(this, new Observer<List<Breed>>() {
             @Override
             public void onChanged(List<Breed> breeds) {
-                Collections.sort(breeds);
-                setBreedList(breeds);
+                if (breedList == null) {
+                    setBreedList(breeds);
+                    isLoading = false;
+                    page++;
+                } else if (!breedList.containsAll(breeds)) {
+                    breedList.addAll(breeds);
+                    isLoading = false;
+                    page++;
+                }
                 adapter.setBreedList(breedList);
                 retainedFragment.setData(breedList);
-                BreedViewModel.setIsLoaded(true); //to prevent new loading data when it is loaded
+                retainedFragment.setPage(page);
             }
         });
 
@@ -120,6 +127,32 @@ public class BreedListActivity extends AppCompatActivity {
                 startActivity(detailIntent);
             }
         });
+
+
+    }
+
+    private void getData() {
+        if (retainedFragment == null) {
+            // create the fragment and data the first time
+            retainedFragment = new RetainedFragment();
+            // add the fragment
+            fm.beginTransaction().add(retainedFragment, "data").commit();
+            // load the data from the web
+            viewModel.loadData(page);
+        }
+        adapter.setOnReachEndListener(new BreedsAdapter.OnReachEndListener() {
+            @Override
+            public void onReachEnd() {
+                if (!isLoading) {
+                    Log.e(TAG, "onReachEnd");
+                    viewModel.loadData(page);
+                }
+            }
+        });
+    }
+
+    public static void setPage(int page) {
+        BreedListActivity.page = page;
     }
 
     public void setBreedList(List<Breed> breedList) {
@@ -127,9 +160,25 @@ public class BreedListActivity extends AppCompatActivity {
     }
 
     @Override
+    public void networkAvailable() {
+        Log.e(TAG, "networkAvailable");
+        getData();
+    }
+
+    @Override
+    public void networkUnavailable() {
+        Log.e(TAG, "networkUnavailable");
+        Toast.makeText(this, getString(R.string.network_error), Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
     public void onDestroy() {
         super.onDestroy();
         // store the data in the fragment
         retainedFragment.setData(breedList);
+        retainedFragment.setPage(page);
+
+        networkStateReceiver.removeListener(this);
+        this.unregisterReceiver(networkStateReceiver);
     }
 }

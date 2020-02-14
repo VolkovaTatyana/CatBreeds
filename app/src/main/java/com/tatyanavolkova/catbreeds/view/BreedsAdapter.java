@@ -30,6 +30,8 @@ public class BreedsAdapter extends RecyclerView.Adapter<BreedsAdapter.BreedViewH
 
     private List<Breed> breedList;
     private OnBreedClickListener onBreedClickListener;
+    private OnReachEndListener onReachEndListener;
+    private final int MAX_SIZE = 67;
     private Context context;
 
     @NonNull
@@ -43,8 +45,13 @@ public class BreedsAdapter extends RecyclerView.Adapter<BreedsAdapter.BreedViewH
 
     @Override
     public void onBindViewHolder(@NonNull BreedViewHolder holder, int position) {
+        if (breedList.size() >= 10 && breedList.size() != MAX_SIZE && position == breedList.size() - 3 && onReachEndListener != null) {
+            onReachEndListener.onReachEnd();
+        }
         holder.binding.breedName.setText(breedList.get(position).getName());
-        downloadImageWithRequestListener(holder, breedList.get(position).getImageUrl());
+        if (breedList.get(position).getImageUrl() != null) {
+            downloadImageWithRequestListener(holder, breedList.get(position).getImageUrl());
+        }
     }
 
     @Override
@@ -55,6 +62,10 @@ public class BreedsAdapter extends RecyclerView.Adapter<BreedsAdapter.BreedViewH
     public void setBreedList(List<Breed> breedList) {
         this.breedList = breedList;
         notifyDataSetChanged();
+    }
+
+    public void setOnReachEndListener(OnReachEndListener onReachEndListener) {
+        this.onReachEndListener = onReachEndListener;
     }
 
     public void downloadImageWithRequestListener(BreedViewHolder holder, String imageURL) {
@@ -84,8 +95,13 @@ public class BreedsAdapter extends RecyclerView.Adapter<BreedsAdapter.BreedViewH
         void onBreedClick(int position);
     }
 
+    interface OnReachEndListener {
+        void onReachEnd();
+    }
+
     class BreedViewHolder extends RecyclerView.ViewHolder {
         final BreedItemBinding binding;
+
         public BreedViewHolder(@NonNull BreedItemBinding binding) {
             super(binding.getRoot());
             this.binding = binding;

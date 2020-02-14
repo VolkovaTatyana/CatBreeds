@@ -1,5 +1,7 @@
 package com.tatyanavolkova.catbreeds.pojo;
 
+import androidx.annotation.NonNull;
+
 import com.google.gson.annotations.SerializedName;
 
 import java.io.Serializable;
@@ -435,5 +437,11 @@ public class Breed implements Serializable, Comparable<Breed> {
     @Override
     public int compareTo(Breed o) {
         return name.compareTo(o.name);
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+        return name;
     }
 }

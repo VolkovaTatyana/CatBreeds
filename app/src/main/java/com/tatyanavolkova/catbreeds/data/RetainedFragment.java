@@ -11,6 +11,7 @@ public class RetainedFragment extends Fragment {
 
     // data object we want to retain
     private List<Breed> data;
+    private int page;
 
     // this method is only called once for this fragment
     @Override
@@ -26,5 +27,13 @@ public class RetainedFragment extends Fragment {
 
     public List<Breed> getData() {
         return data;
+    }
+
+    public int getPage() {
+        return page;
+    }
+
+    public void setPage(int page) {
+        this.page = page;
     }
 }
