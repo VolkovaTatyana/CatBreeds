@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">CatBreeds</string>
+    <string name="app_name">Cat Breeds</string>
     <string name="error_load_data">An error has occurred while loading data. Please check up an internet connection.</string>
     <string name="network_error">ERROR, network is unavailable</string>
 </resources>
