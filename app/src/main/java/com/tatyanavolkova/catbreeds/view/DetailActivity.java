@@ -72,7 +72,7 @@ public class DetailActivity extends AppCompatActivity {
             field.setAccessible(true);
             StringBuilder stringFieldValue = new StringBuilder();
             if (field.getName().equals("name") || field.getName().equals("imageUrl")) continue;
-            stringFieldValue.append(field.getName());
+            stringFieldValue.append(splitStringByUpperCaseLetter(field.getName()));
             stringFieldValue.append(": ");
             if (field.getType().equals(String.class)) {
                 try {
@@ -116,7 +116,7 @@ public class DetailActivity extends AppCompatActivity {
                 .listener(new RequestListener<Drawable>() {
                     @Override
                     public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
-                        Log.e(TAG, "ERROR "+ e.getMessage());
+                        Log.e(TAG, "ERROR " + e.getMessage());
                         binding.imageLoadingIndicator.setVisibility(View.GONE);
                         return false;
                     }
@@ -128,5 +128,20 @@ public class DetailActivity extends AppCompatActivity {
                     }
                 })
                 .into(binding.imageCat);
+    }
+
+    public static String splitStringByUpperCaseLetter(String inputString) {
+        StringBuilder result = new StringBuilder();
+        result.append(Character.toUpperCase(inputString.charAt(0)));
+        for (int i = 1; i < inputString.length(); i++) {
+            char c = inputString.charAt(i);
+            if (Character.isUpperCase(c)) {
+                result.append(" ");
+                result.append(Character.toLowerCase(c));
+            } else {
+                result.append(c);
+            }
+        }
+        return result.toString();
     }
 }
