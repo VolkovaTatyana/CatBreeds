@@ -13,42 +13,18 @@ import android.app.FragmentManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.res.Configuration;
-import android.graphics.drawable.Drawable;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.Toast;
-
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.DataSource;
-import com.bumptech.glide.load.engine.GlideException;
-import com.bumptech.glide.request.RequestListener;
-import com.bumptech.glide.request.RequestOptions;
-import com.bumptech.glide.request.target.Target;
 import com.tatyanavolkova.catbreeds.R;
 import com.tatyanavolkova.catbreeds.data.RetainedFragment;
 import com.tatyanavolkova.catbreeds.databinding.ActivityMainBinding;
-import com.tatyanavolkova.catbreeds.network.ApiFactory;
-import com.tatyanavolkova.catbreeds.network.ApiService;
 import com.tatyanavolkova.catbreeds.network.NetworkStateReceiver;
 import com.tatyanavolkova.catbreeds.pojo.Breed;
-import com.tatyanavolkova.catbreeds.pojo.ImageObject;
-
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Consumer;
-import io.reactivex.schedulers.Schedulers;
 
 public class BreedListActivity extends AppCompatActivity implements NetworkStateReceiver.NetworkStateReceiverListener {
 
@@ -61,6 +37,7 @@ public class BreedListActivity extends AppCompatActivity implements NetworkState
     private static int page = 0;
     private static boolean isLoading = false;
     private static boolean resumeDownload = false;
+    private static int tryCount = 0;
 
     private FragmentManager fm;
 
@@ -90,16 +67,11 @@ public class BreedListActivity extends AppCompatActivity implements NetworkState
         fm = getFragmentManager();
         retainedFragment = (RetainedFragment) fm.findFragmentByTag("data");
 
-        if (retainedFragment != null && retainedFragment.getData() != null) {
-            setBreedList(retainedFragment.getData());
-            setPage(retainedFragment.getPage());
-            adapter.setBreedList(breedList);
-            setResumeDownload(retainedFragment.isResumeDownload());
-        }
-
         networkStateReceiver = new NetworkStateReceiver();
         networkStateReceiver.addListener(this);
         this.registerReceiver(networkStateReceiver, new IntentFilter(android.net.ConnectivityManager.CONNECTIVITY_ACTION));
+
+        getData();
 
         viewModel.setOnStartLoadingListener(new BreedViewModel.OnStartLoadingListener() {
             @Override
@@ -111,13 +83,20 @@ public class BreedListActivity extends AppCompatActivity implements NetworkState
 
             @Override
             public void onLoadingFailed() {
+                binding.listLoadingIndicator.setVisibility(View.GONE);
                 isLoading = false;
                 resumeDownload = true;
                 retainedFragment.setResumeDownload(true);
+                if(networkStateReceiver.connected && tryCount < 2) {
+                    viewModel.loadData(page); //если данные не загружены и и-нет подключен - попытка снова загрузить данные.
+                    binding.listLoadingIndicator.setVisibility(View.VISIBLE);
+                    tryCount++;
+                }
             }
         });
 
         viewModel.getBreedListLiveData().observe(this, breeds -> {
+            binding.listLoadingIndicator.setVisibility(View.GONE);
             if (breedList == null) {
                 setBreedList(breeds);
                 isLoading = false;
@@ -140,6 +119,7 @@ public class BreedListActivity extends AppCompatActivity implements NetworkState
     }
 
     private void getData() {
+        binding.listLoadingIndicator.setVisibility(View.VISIBLE);
         if (retainedFragment == null) {
             // create the fragment and data the first time
             retainedFragment = new RetainedFragment();
@@ -147,14 +127,22 @@ public class BreedListActivity extends AppCompatActivity implements NetworkState
             fm.beginTransaction().add(retainedFragment, "data").commit();
             // load the data from the web
             viewModel.loadData(page);
+        } else {
+            binding.listLoadingIndicator.setVisibility(View.GONE);
+            setBreedList(retainedFragment.getData());
+            setPage(retainedFragment.getPage());
+            adapter.setBreedList(breedList);
+            setResumeDownload(retainedFragment.isResumeDownload());
         }
         adapter.setOnReachEndListener(() -> {
             if (!isLoading) {
                 viewModel.loadData(page);
+                binding.listLoadingIndicator.setVisibility(View.VISIBLE);
             }
         });
         if (resumeDownload) {
             viewModel.loadData(page);
+            binding.listLoadingIndicator.setVisibility(View.VISIBLE);
         }
     }
 

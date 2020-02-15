@@ -92,6 +92,9 @@ public class BreedViewModel extends AndroidViewModel {
                                 breedListLiveData.setValue(breeds);
                             }
                         }, throwable -> {
+                            if (onStartLoadingListener != null) {
+                                onStartLoadingListener.onLoadingFailed();
+                            }
                             Toast.makeText(context, context.getResources().getString(R.string.error_load_data), Toast.LENGTH_SHORT).show();
                         });
         compositeDisposable.add(disposableImage);

@@ -9,6 +9,7 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -116,16 +117,16 @@ public class DetailActivity extends AppCompatActivity {
                     @Override
                     public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
                         Log.e(TAG, "ERROR "+ e.getMessage());
-                        Toast.makeText(getApplicationContext(), getString(R.string.error_load_data), Toast.LENGTH_SHORT).show();
+                        binding.imageLoadingIndicator.setVisibility(View.GONE);
                         return false;
                     }
 
                     @Override
                     public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+                        binding.imageLoadingIndicator.setVisibility(View.GONE);
                         return false;
                     }
                 })
-                .apply(new RequestOptions())
                 .into(binding.imageCat);
     }
 }

@@ -22,6 +22,7 @@ import com.tatyanavolkova.catbreeds.R;
 import com.tatyanavolkova.catbreeds.databinding.BreedItemBinding;
 import com.tatyanavolkova.catbreeds.pojo.Breed;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class BreedsAdapter extends RecyclerView.Adapter<BreedsAdapter.BreedViewHolder> {
@@ -75,15 +76,16 @@ public class BreedsAdapter extends RecyclerView.Adapter<BreedsAdapter.BreedViewH
                     @Override
                     public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
                         Log.e(TAG, "ERROR " + e.getMessage());
+                        holder.binding.loadingIndicator.setVisibility(View.GONE);
                         return false;
                     }
 
                     @Override
                     public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+                        holder.binding.loadingIndicator.setVisibility(View.GONE);
                         return false;
                     }
                 })
-                .apply(new RequestOptions())
                 .into(holder.binding.smallImage);
     }
 
