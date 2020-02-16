@@ -1,12 +1,19 @@
 package com.tatyanavolkova.catbreeds.view;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.databinding.DataBindingUtil;
 
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
+import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.method.LinkMovementMethod;
+import android.text.style.ClickableSpan;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
@@ -70,7 +77,8 @@ public class DetailActivity extends AppCompatActivity {
         Field[] classFields = Breed.class.getDeclaredFields();
         for (Field field : classFields) {
             field.setAccessible(true);
-            StringBuilder stringFieldValue = new StringBuilder();
+//            StringBuilder stringFieldValue = new StringBuilder();
+            SpannableStringBuilder stringFieldValue = new SpannableStringBuilder();
             if (field.getName().equals("name") || field.getName().equals("imageUrl")) continue;
             stringFieldValue.append(splitStringByUpperCaseLetter(field.getName()));
             stringFieldValue.append(": ");
@@ -79,8 +87,12 @@ public class DetailActivity extends AppCompatActivity {
                     String fieldvalue = (String) field.get(catBreed);
                     if (fieldvalue == null || fieldvalue.isEmpty()) {
                         continue;
+                    } else if (fieldvalue.startsWith("http")) { //to make active links
+                        SpannableString ss = makeFieldvalueClickable(fieldvalue);
+                        stringFieldValue.append(ss);
+                    } else {
+                        stringFieldValue.append(fieldvalue);
                     }
-                    stringFieldValue.append(fieldvalue);
                 } catch (IllegalAccessException e) {
                     e.printStackTrace();
                 }
@@ -97,17 +109,37 @@ public class DetailActivity extends AppCompatActivity {
                     if (intFieldValue == 0) {
                         continue;
                     }
-                    stringFieldValue.append(field.getInt(catBreed));
+                    stringFieldValue.append(String.valueOf(field.getInt(catBreed)));
                 } catch (IllegalAccessException e) {
                     e.printStackTrace();
                 }
             }
             TextView tv = new TextView(this, null, 0, R.style.DetailsTextViewStyle);
-            tv.setText(stringFieldValue.toString());
+            tv.setText(stringFieldValue);
             tv.setLayoutParams(params);//added margins
+            tv.setMovementMethod(LinkMovementMethod.getInstance()); //to make clicks work
 
             binding.details.addView(tv);
         }
+    }
+
+    private SpannableString makeFieldvalueClickable(String fieldvalue) {
+        SpannableString ss = new SpannableString(fieldvalue);
+        ClickableSpan clickableSpan = new ClickableSpan() {
+            @Override
+            public void onClick(@NonNull View widget) {
+                Uri address = Uri.parse(fieldvalue);
+                Intent openLinkIntent = new Intent(Intent.ACTION_VIEW, address);
+                if (openLinkIntent.resolveActivity(getPackageManager()) != null) {
+                    startActivity(openLinkIntent);
+                } else {
+                    Log.e(TAG, "openLinkIntent Error");
+                }
+            }
+        };
+
+        ss.setSpan(clickableSpan, 0, fieldvalue.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        return ss;
     }
 
     public void downloadImageWithRequestListener(String imageURL) {

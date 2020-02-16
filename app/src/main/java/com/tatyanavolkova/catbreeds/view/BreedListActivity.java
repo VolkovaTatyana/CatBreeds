@@ -87,7 +87,7 @@ public class BreedListActivity extends AppCompatActivity implements NetworkState
                 isLoading = false;
                 resumeDownload = true;
                 retainedFragment.setResumeDownload(true);
-                if(networkStateReceiver.connected && tryCount < 2) {
+                if(networkStateReceiver != null && networkStateReceiver.connected && tryCount < 2) {
                     viewModel.loadData(page); //если данные не загружены и и-нет подключен - попытка снова загрузить данные.
                     binding.listLoadingIndicator.setVisibility(View.VISIBLE);
                     tryCount++;
