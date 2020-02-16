@@ -77,7 +77,6 @@ public class DetailActivity extends AppCompatActivity {
         Field[] classFields = Breed.class.getDeclaredFields();
         for (Field field : classFields) {
             field.setAccessible(true);
-//            StringBuilder stringFieldValue = new StringBuilder();
             SpannableStringBuilder stringFieldValue = new SpannableStringBuilder();
             if (field.getName().equals("name") || field.getName().equals("imageUrl")) continue;
             stringFieldValue.append(splitStringByUpperCaseLetter(field.getName()));
