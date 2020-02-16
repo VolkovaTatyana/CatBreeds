@@ -18,11 +18,13 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
+
 import com.tatyanavolkova.catbreeds.R;
 import com.tatyanavolkova.catbreeds.data.RetainedFragment;
 import com.tatyanavolkova.catbreeds.databinding.ActivityMainBinding;
 import com.tatyanavolkova.catbreeds.network.NetworkStateReceiver;
 import com.tatyanavolkova.catbreeds.pojo.Breed;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -87,10 +89,12 @@ public class BreedListActivity extends AppCompatActivity implements NetworkState
                 isLoading = false;
                 resumeDownload = true;
                 retainedFragment.setResumeDownload(true);
-                if(networkStateReceiver != null && networkStateReceiver.connected && tryCount < 2) {
-                    viewModel.loadData(page); //если данные не загружены и и-нет подключен - попытка снова загрузить данные.
-                    binding.listLoadingIndicator.setVisibility(View.VISIBLE);
-                    tryCount++;
+                if (networkStateReceiver != null) {
+                    if (networkStateReceiver.connected && tryCount < 2) {
+                        viewModel.loadData(page); //если данные не загружены и и-нет подключен - попытка снова загрузить данные.
+                        binding.listLoadingIndicator.setVisibility(View.VISIBLE);
+                        tryCount++;
+                    }
                 }
             }
         });
